@@ -32,9 +32,9 @@
 
 (defn reverse-step [grid]
   (vec (for [row grid]
-    (if (< (:step row) (:length row))
+    (if (> (:step row) 0)
       (update-in row [:step] dec)
-      (assoc-in row [:step] 15)))))
+      (assoc-in row [:step] (:length row))))))
 
 (defn button [x y status]
   (q/stroke-weight 0)
