@@ -30,11 +30,18 @@
       (update-in row [:step] inc)
       (assoc-in row [:step] 0)))))
 
+(defn reverse-step [grid]
+  (vec (for [row grid]
+    (if (< (:step row) (:length row))
+      (update-in row [:step] dec)
+      (assoc-in row [:step] 15)))))
+
 (defn button [x y status]
   (q/stroke-weight 0)
 
   (cond
     (= status :step) (q/fill (q/color 255 0 0))
+
     (= status :step-on) (q/fill (q/color 205 80 255))
     (= status :disabled) (q/fill 50)
     (= status :disabled-on) (q/fill 90)
@@ -62,7 +69,7 @@
     (let [row (-> grid (nth x))
           cell (-> row :seq (nth (:step row)))]
          (if (> cell 0)
-           ((:sample row)))))) 
+           ((:sample row))))))
 
 (defn draw-labels []
   (doseq [x (range (count @grid))]
@@ -75,7 +82,7 @@
 
   (when
     (= (mod (q/frame-count) 4) 0)
-      (swap! grid advance-step)
+      (swap! grid reverse-step)
       (trigger @grid))
 
   (draw-matrix @grid))
