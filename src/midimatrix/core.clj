@@ -13,28 +13,26 @@
 
 (def grid
   (atom [
-         {:step 0 :seq (gen-cells) :length 15 :name "BD" :sample kick}
-         {:step 0 :seq (gen-cells) :length 15 :name "SD" :sample snare}
-         {:step 0 :seq (gen-cells) :length 15 :name "LT" :sample tom}
-         {:step 0 :seq (gen-cells) :length 15 :name "HC" :sample haziti-clap}
-         {:step 0 :seq (gen-cells) :length 15 :name "CH" :sample closed-hat}
-         {:step 0 :seq (gen-cells) :length 15 :name "OH" :sample open-hat}
-         {:step 0 :seq (gen-cells) :length 15 :name "BI" :sample bing}
+         {:dir :reverse :step 0 :seq (gen-cells) :length 15 :name "BD" :sample kick}
+         {:dir :advance :step 0 :seq (gen-cells) :length 15 :name "SD" :sample snare}
+         {:dir :advance :step 0 :seq (gen-cells) :length 15 :name "LT" :sample tom}
+         {:dir :advance :step 0 :seq (gen-cells) :length 15 :name "HC" :sample haziti-clap}
+         {:dir :advance :step 0 :seq (gen-cells) :length 15 :name "CH" :sample closed-hat}
+         {:dir :advance :step 0 :seq (gen-cells) :length 15 :name "OH" :sample open-hat}
+         {:dir :advance :step 0 :seq (gen-cells) :length 15 :name "BI" :sample bing}
         ]))
 
 (def last-clicked (atom [100 100]))
 
 (defn advance-step [grid]
   (vec (for [row grid]
-    (if (< (:step row) (:length row))
-      (update-in row [:step] inc)
-      (assoc-in row [:step] 0)))))
-
-(defn reverse-step [grid]
-  (vec (for [row grid]
-    (if (> (:step row) 0)
-      (update-in row [:step] dec)
-      (assoc-in row [:step] (:length row))))))
+    (if (= (:dir row) :advance)
+      (if (< (:step row) (:length row))
+        (update-in row [:step] inc)
+        (assoc-in row [:step] 0))
+      (if (> (:step row) 0)
+        (update-in row [:step] dec)
+        (assoc-in row [:step] (:length row)))))))
 
 (defn button [x y status]
   (q/stroke-weight 0)
@@ -76,18 +74,34 @@
     (q/fill 100)
     (q/text (-> @grid (nth x) :name) 20 (+ 35 (* x 30)))))
 
+(defn draw-labels []
+  (doseq [x (range (count @grid))]
+    (q/fill 100)
+    (q/text (-> @grid (nth x) :name) 20 (+ 35 (* x 30)))))
+
 (defn draw []
   (q/background 32)
   (draw-labels)
 
+  (doseq [row (range (count @grid))]
+   (q/fill 255)
+   (q/ellipse 1050 (+ (* row 30) 30) 20 20))
+
   (when
     (= (mod (q/frame-count) 4) 0)
-      (swap! grid reverse-step)
+      (swap! grid advance-step)
       (trigger @grid))
 
   (draw-matrix @grid))
 
 (defn toggle-button []
+  (if (> (q/mouse-x) 1020)
+    (let [x (int (- (Math/round (float (/ (q/mouse-y) 30))) 1))
+          toggled-dir (if (= (get-in @grid [x :dir]) :reverse)
+                        :advance
+                        :reverse)]
+      (reset! grid (assoc-in @grid [x :dir] toggled-dir)))
+
   (let [x (int (- (Math/round (float (/ (q/mouse-y) 30))) 1))
         y (int (- (Math/round (float (/ (q/mouse-x) 30))) 2))
         cell (get-in (vec @grid) [x :seq y])
@@ -95,7 +109,7 @@
     (reset! last-clicked [x y])
     (if (q/key-pressed?)
       (reset! grid (assoc-in @grid [x :length] y))
-      (reset! grid (assoc-in @grid [x :seq y] toggled-value)))))
+      (reset! grid (assoc-in @grid [x :seq y] toggled-value))))))
 
 (defn drag-mouse []
   (let [x (int (- (Math/round (float (/ (q/mouse-y) 30))) 1))
@@ -109,4 +123,4 @@
   :draw draw
   :mouse-pressed toggle-button
   :mouse-dragged drag-mouse
-  :size [1020 (+ 35 (* (count @grid) 30))])
+  :size [1100 (+ 35 (* (count @grid) 30))])
